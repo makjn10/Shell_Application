@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "shell-builtin.h"
-#include "parser.h"
-#include "executioner.h"
+#include "ShellBuiltins/shell-builtin.h"
+#include "Parser/parser.h"
+#include "Executioner/executioner.h"
 
 
 /*
