@@ -1,28 +1,6 @@
 
 /*
-	FUNCTION 1 :  SHa_EXECUTE()
-	DESCRIPTION :
- 		This is function of execution for the shell program.
- 		This function is to execute the shell(built-in or launch the shell program).
- 		args is NUll terminated list of arguments passed to the function.
- 		It returns 1 if the shell has to continue reading .
- 		It returns 0 if termination is required .
- */
-int SHa_EXECUTE(char **args){
-  	if (args[0] == NULL) {
-    		return 1;
- 	}
-	int i;
-  	for(i = 0; i < SHa_num_builtins(); i++) {
-    	if (strcmp(args[0], builtin_str[i])==0) {
-      		return(*builtin_func[i])(args);
-    	}
-  	}
-  	return SHa_LAUNCH(args);
-}
-
-/*
-	FUNCTION 2: SHa_LAUNCH()
+	FUNCTION 1: SHa_LAUNCH()
 	DESCRIPTION :
  		This is function to launch the shell program and then wait for it to terminate.
  		args is NUll terminated list of arguments passed to the function.
@@ -47,6 +25,28 @@ int SHa_LAUNCH(char **args){
     	}while (!WIFEXITED(status) && !WIFSIGNALED(status));
   	}
   	return 1;
+}
+
+/*
+	FUNCTION 2 :  SHa_EXECUTE()
+	DESCRIPTION :
+ 		This is function of execution for the shell program.
+ 		This function is to execute the shell(built-in or launch the shell program).
+ 		args is NUll terminated list of arguments passed to the function.
+ 		It returns 1 if the shell has to continue reading .
+ 		It returns 0 if termination is required .
+ */
+int SHa_EXECUTE(char **args){
+  	if (args[0] == NULL) {
+    		return 1;
+ 	}
+	int i;
+  	for(i = 0; i < SHa_num_builtins(); i++) {
+    	if (strcmp(args[0], builtin_str[i])==0) {
+      		return(*builtin_func[i])(args);
+    	}
+  	}
+  	return SHa_LAUNCH(args);
 }
 
 /*
