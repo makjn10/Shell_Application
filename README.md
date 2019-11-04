@@ -25,15 +25,10 @@ Start of the Program
 We'll just highlight the main concepts. We start at the entry point of the program. 
 
 ```cpp
-int main(int argc, char **argv)
-{
-  // Load config files, if any.
-
+int main(int argc , char **argv){
   // Run command loop.
-  lsh_loop();
-
-  // Perform any shutdown/cleanup.
-
+  SHa_LOOP();
+  
   return EXIT_SUCCESS;
 }
 ```
@@ -47,64 +42,65 @@ Then there is a main loop which would frequently scan for commands, parse it int
 If we translate it into the program then it will look as
 
 ```cpp
-void lsh_loop(void)
-{
-  char *line;
-  char **args;
-  int status;
-
-  do {
-    printf("> ");
-    line = lsh_read_line();
-    args = lsh_split_line(line);
-    status = lsh_execute(args);
-
-    free(line);
-    free(args);
-  } while (status);
+void SHa_LOOP(void){
+  	char *line;
+  	char **args;
+  	int status;
+  	do{
+    	printf("> ");
+    	line = SHa_READLINE();
+    	args = SHa_SPLITLINE(line);
+    	status = SHa_EXECUTE(args);
+    	free(line);
+    	free(args);
+  	} 
+	while(status);
 }
+
 ```
 
 ### How it will read lines 
 We will implement lsh_read_line() so that our program will be able to read the commands
 
 ```cpp
-#define LSH_RL_BUFSIZE 1024
-char *lsh_read_line(void)
-{
-  int bufsize = LSH_RL_BUFSIZE;
-  int position = 0;
-  char *buffer = malloc(sizeof(char) * bufsize);
-  int c;
+#define SHa_RL_BUFFSIZE 1024 //initial size of the buffer used to read line(RL)
+char * SHa_READLINE(void){
+	int buffsize = SHa_RL_BUFFSIZE;
+	int position = 0; // variable used as a pointer for the buffer array
+	
+	char * buffer = malloc(sizeof(char) * buffsize);
+	
+	int ch;
+ 	if(!buffer){
+	    fprintf(stderr, "SHa: RL_Buffer Allocation Error\n");
+    	exit(EXIT_FAILURE);
+  	}
+	
+  	while(1){
+        ch = getchar();
+    
+        if(ch == EOF){
+            exit(EXIT_SUCCESS);
+        } 
+        else if(ch == '\n'){
+            buffer[position] = '\0';
+            return buffer;
+        }
+        else{
+            buffer[position] = ch;
+        }
+        position++;
 
-  if (!buffer) {
-    fprintf(stderr, "lsh: allocation error\n");
-    exit(EXIT_FAILURE);
-  }
-
-  while (1) {
-    // Read a character
-    c = getchar();
-
-    // If we hit EOF, replace it with a null character and return.
-    if (c == EOF || c == '\n') {
-      buffer[position] = '\0';
-      return buffer;
-    } else {
-      buffer[position] = c;
-    }
-    position++;
-
-    // If we have exceeded the buffer, reallocate.
-    if (position >= bufsize) {
-      bufsize += LSH_RL_BUFSIZE;
-      buffer = realloc(buffer, bufsize);
-      if (!buffer) {
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE);
-      }
-    }
-  }
+        if(position >= buffsize){
+            buffsize += SHa_RL_BUFFSIZE;
+            buffer = realloc(buffer, buffsize);
+        
+            if(!buffer) {
+                fprintf(stderr, "SHa: RL_Buffer Allocation Error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+  	}
 }
 ```
 
@@ -118,37 +114,42 @@ we will simply use whitespace to separate arguments from each other. So the comm
 With those simplifications, all we need to do is “tokenize” the string using whitespace as delimiters.
 
 ```cpp
-#define LSH_TOK_BUFSIZE 64
-#define LSH_TOK_DELIM " \t\r\n\a"
-char **lsh_split_line(char *line)
-{
-  int bufsize = LSH_TOK_BUFSIZE, position = 0;
-  char **tokens = malloc(bufsize * sizeof(char*));
-  char *token;
+#define SHa_TOK_BUFFSIZE 64 //Initial size of the buffer where we split the input line and store the commands (tokens) to be passed to the executioner
+#define SHa_TOK_DELIM " \t\r\n\a" //Delimiters according to which input string is to splitted
+char ** SHa_SPLITLINE(char * input){
+	int buffsize = SHa_TOK_BUFFSIZE;
+	int position = 0; //as a pointer to buffer
+  
+  	char ** tokens = malloc(buffsize * sizeof(char*));
+  	char *token, **tokens_backup;
 
-  if (!tokens) {
-    fprintf(stderr, "lsh: allocation error\n");
-    exit(EXIT_FAILURE);
-  }
+  	if(!tokens){
+    		fprintf(stderr, "SHa: TOK_Buffer Allocation Error\n");
+    		exit(EXIT_FAILURE);
+  	}
+	
+  	token = strtok(input , SHa_TOK_DELIM);
+  	
+  	while(token != NULL){
+    		tokens[position] = token;
+    		position++;
+		
+    		if(position >= buffsize){
+      			buffsize += SHa_TOK_BUFFSIZE;
+      			tokens_backup = tokens;
+      			tokens = realloc(tokens, buffsize * sizeof(char*));
+      		
+      			if(!tokens){
+				free(tokens_backup);
+        			fprintf(stderr, "SHa: TOK_Buffer Allocation Error\n");
+        			exit(EXIT_FAILURE);
+      			}
+    		}
 
-  token = strtok(line, LSH_TOK_DELIM);
-  while (token != NULL) {
-    tokens[position] = token;
-    position++;
-
-    if (position >= bufsize) {
-      bufsize += LSH_TOK_BUFSIZE;
-      tokens = realloc(tokens, bufsize * sizeof(char*));
-      if (!tokens) {
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    token = strtok(NULL, LSH_TOK_DELIM);
-  }
-  tokens[position] = NULL;
-  return tokens;
+    		token = strtok(NULL , SHa_TOK_DELIM);
+  	}
+  	tokens[position] = NULL;
+  	return tokens;
 }
 ```
 
@@ -169,29 +170,25 @@ With these two system calls, we have the building blocks for how most programs a
 
 The code to launch program is
 ```cpp
-int lsh_launch(char **args)
-{
-  pid_t pid, wpid;
-  int status;
-
-  pid = fork();
-  if (pid == 0) {
-    // Child process
-    if (execvp(args[0], args) == -1) {
-      perror("lsh");
-    }
-    exit(EXIT_FAILURE);
-  } else if (pid < 0) {
-    // Error forking
-    perror("lsh");
-  } else {
-    // Parent process
-    do {
-      wpid = waitpid(pid, &status, WUNTRACED);
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-  }
-
-  return 1;
+int SHa_LAUNCH(char **args){
+  	pid_t pid;
+  	int status;
+  	pid = fork();
+  	if(pid == 0){
+    	if(execvp(args[0], args) == -1){
+      		perror("SHa");
+    	}
+    	exit(EXIT_FAILURE);
+  	} 
+	else if(pid < 0){
+    	perror("SHa");
+  	} 
+	else{
+    	do{
+      		waitpid(pid, &status, WUNTRACED);
+    	}while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  	}
+  	return 1;
 }
 ```
 
@@ -215,16 +212,9 @@ Similarly, if there was a program named exit, it wouldn’t be able to exit the 
 So, it makes sense that we need to add some commands to the shell itself. The ones I added to my shell are cd, exit, and help. Here are their function implementations below:
 
 ```cpp
-/*
-  Function Declarations for builtin shell commands:
- */
-int lsh_cd(char **args);
-int lsh_help(char **args);
-int lsh_exit(char **args);
-
-/*
-  List of builtin commands, followed by their corresponding functions.
- */
+int SHa_cd(char **args);
+int SHa_help(char **args);
+int SHa_exit(char **args);
 char *builtin_str[] = {
   "cd",
   "help",
@@ -232,38 +222,35 @@ char *builtin_str[] = {
 };
 
 int (*builtin_func[]) (char **) = {
-  &lsh_cd,
-  &lsh_help,
-  &lsh_exit
+  &SHa_cd,
+  &SHa_help,
+  &SHa_exit
 };
 
-int lsh_num_builtins() {
+int SHa_num_builtins() {
   return sizeof(builtin_str) / sizeof(char *);
 }
 
-/*
-  Builtin function implementations.
-*/
-int lsh_cd(char **args)
+int SHa_cd(char **args)
 {
   if (args[1] == NULL) {
-    fprintf(stderr, "lsh: expected argument to \"cd\"\n");
+    fprintf(stderr, "SHa: expected argument to \"cd\"\n");
   } else {
     if (chdir(args[1]) != 0) {
-      perror("lsh");
+      perror("SHa");
     }
   }
   return 1;
 }
 
-int lsh_help(char **args)
+int SHa_help(char **args)
 {
   int i;
-  printf("Stephen Brennan's LSH\n");
+  printf("Stephen Brennan'SHa\n");
   printf("Type program names and arguments, and hit enter.\n");
   printf("The following are built in:\n");
 
-  for (i = 0; i < lsh_num_builtins(); i++) {
+  for (i = 0; i < SHa_num_builtins(); i++) {
     printf("  %s\n", builtin_str[i]);
   }
 
@@ -271,7 +258,7 @@ int lsh_help(char **args)
   return 1;
 }
 
-int lsh_exit(char **args)
+int SHa_exit(char **args)
 {
   return 0;
 }
@@ -316,39 +303,4 @@ Alternatively, you can get the code from GitHub. That link goes straight to the 
 
 ## Output for Some Shell Codes
 
-Code 1:  `ls- l` 
-
-Output :
-```
-tarun@krishna:~/Desktop$ bash final.sh
-total 1072
--rw-rw-r--  1 tarun tarun      27 Nov  3 16:44  final.sh
--rw-rw-r--  1 tarun tarun     578 Nov  3 16:30  jai
--rw-rw-r--  1 tarun tarun 1051391 Jul 10  2018  krishna-syamasundara_1.jpg
--rw-rw-r--  1 tarun tarun    3464 Nov  3 16:36  NewScript
-drwxr-xr-x 31 tarun tarun    4096 Nov  2 14:50 'Previous desktop'
--rw-rw-r--  1 tarun tarun     117 Nov  3 16:30  program.sh
--rw-rw-r--  1 tarun tarun   19119 Nov  2 17:35  readme.docx
-```
-
-Code 2: Hello Program In shell
-```sh
-#!/Desktop/NewScript
-echo "what is your name?"
-read name
-echo "How do you do $name ?"
-read remark
-echo "I am $remark too."
-```   
-Output:
-```
-tarun@krishna:~/Desktop$ bash program.sh 
-what is your name?
-Tarun
-How do you do Tarun ?
-Good, nice
-I am Good, nice too.
-This is the way you run using this NewScript made by newScript
-Well, I hope that was informative
-Tarun
-```
+![](./screenshot.jpeg)
