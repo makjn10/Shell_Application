@@ -1,7 +1,6 @@
 # Shell Programming Application
 A shell Program to implement Grammer in C language in shell.I and shell.y to make our parser interpret the command lines and provide our executor with the correct information and performs task given to it.
        
-       
 ## Project Description
 The shell is a program that interacts with the user through a terminal or takes the input from a file and executes a sequence of commands that are passed to the Operating System. 
 
@@ -60,7 +59,7 @@ void SHa_LOOP(void){
 ```
 
 ### How it will read lines 
-We will implement lsh_read_line() so that our program will be able to read the commands
+We will implement SHa_read_line() so that our program will be able to read the commands
 
 ```cpp
 #define SHa_RL_BUFFSIZE 1024 //initial size of the buffer used to read line(RL)
@@ -203,7 +202,7 @@ The second condition (pid < 0) checks whether fork() had an error. If so, we pri
 The third condition means that fork() executed successfully. The parent process will land here. We know that the child is going to execute the process, so the parent needs to wait for the command to finish running. We use waitpid() to wait for the process’s state to change. Unfortunately, waitpid() has a lot of options (like exec()). Processes can change state in lots of ways, and not all of them mean that the process has ended. A process can either exit (normally, or with an error code), or it can be killed by a signal. So, we use the macros provided with waitpid() to wait until either the processes are exited or killed. Then, the function finally returns a 1, as a signal to the calling function that we should prompt for input again.
 
 ## Buitin’s of Shell
-The lsh_loop() function calls lsh_execute(), but above, we titled our function lsh_launch().
+The SHa_loop() function calls lsh_execute(), but above, we titled our function SHa_launch().
 
 The reason is actually pretty simple. If you want to change directory, you need to use the function chdir(). The thing is, the current directory is a property of a process. So, if you wrote a program called cd that changed directory, it would just change its own current directory, and then terminate. Its parent process’s current directory would be unchanged. Instead, the shell process itself needs to execute chdir(), so that its own current directory is updated. Then, when it launches child processes, they will inherit that directory too.
 
@@ -268,7 +267,7 @@ There are three parts to this code. The first part contains forward declarations
 
 The next part is an array of builtin command names, followed by an array of their corresponding functions. This is so that, in the future, builtin commands can be added simply by modifying these arrays, rather than editing a large “switch” statement somewhere in the code. If you’re confused by the declaration of builtin_func, that’s OK! I am too. It’s an array of function pointers (that take array of strings and return an int). Any declaration involving function pointers in C can get really complicated. I still look up how function pointers are declared myself!
 
-Finally, I implement each function. The lsh_cd() function first checks that its second argument exists, and prints an error message if it doesn’t. Then, it calls chdir(), checks for errors, and returns. The help function prints a nice message and the names of all the builtins. And the exit function returns 0, as a signal for the command loop to terminate.
+Finally, I implement each function. The SHa_cd() function first checks that its second argument exists, and prints an error message if it doesn’t. Then, it calls chdir(), checks for errors, and returns. The help function prints a nice message and the names of all the builtins. And the exit function returns 0, as a signal for the command loop to terminate.
 
 ## Bringing all things Together
 
@@ -298,8 +297,6 @@ Make sure to only include one implementation of lsh_read_line(). You’ll need t
     * strtok()
 
 Once you have the code and headers, it should be as simple as running gcc -o main main.c to compile it, and then ./main to run it.
-
-Alternatively, you can get the code from GitHub. That link goes straight to the current revision of the code at the time of this writing– I may choose to update it and add new features someday in the future. If I do, I’ll try my best to update this article with the details and implementation ideas.
 
 ## Output for Some Shell Codes
 
